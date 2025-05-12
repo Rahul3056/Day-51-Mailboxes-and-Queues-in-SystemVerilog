@@ -1,0 +1,90 @@
+
+
+## ✅ **Example: Producer-Consumer Using Queue and Mailbox**
+
+We’ll simulate a **transaction producer** that creates data, sends it to a **driver** using a **mailbox**, and the driver stores it in a **queue** for processing.
+
+---
+
+### **1. Define a Simple Transaction Class**
+
+```systemverilog
+class Transaction;
+    rand bit [7:0] data;
+
+    function void display(string tag);
+        $display("[%s] Data: %0d", tag, data);
+    endfunction
+endclass
+```
+
+---
+
+### **2. Testbench Module**
+
+```systemverilog
+module tb_mailbox_queue;
+
+    mailbox #(Transaction) mbox = new(); // typed mailbox
+    Transaction q[$]; // queue to hold received transactions
+
+    // Producer: generates and sends transactions
+    initial begin : producer
+        Transaction t;
+
+        repeat (5) begin
+            t = new();
+            assert(t.randomize());
+            t.display("Produced");
+            mbox.put(t); // send to driver
+            #5;
+        end
+    end
+
+    // Consumer (Driver): receives and stores transactions in queue
+    initial begin : consumer
+        Transaction t;
+
+        repeat (5) begin
+            mbox.get(t); // blocking receive
+            t.display("Received");
+            q.push_back(t); // store in queue
+        end
+
+        // Show all queued transactions
+        $display("\n[Queue Contents]");
+        foreach (q[i])
+            q[i].display($sformatf("Queue[%0d]", i));
+
+        $finish;
+    end
+
+endmodule
+```
+
+---
+
+### **3. Sample Output**
+
+```
+[Produced] Data: 78
+[Received] Data: 78
+[Produced] Data: 25
+[Received] Data: 25
+...
+
+[Queue Contents]
+[Queue[0]] Data: 78
+[Queue[1]] Data: 25
+...
+```
+
+---
+
+## ✅ Summary
+
+* `mailbox` is used for **safe hand-off** between producer and consumer.
+* `queue` is used to **store data** for later processing or checking.
+* This mimics real-world **driver/monitor/testbench** communication patterns.
+
+
